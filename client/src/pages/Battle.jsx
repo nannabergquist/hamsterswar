@@ -1,5 +1,6 @@
 import React from 'react'
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 import { Link } from 'react-router-dom';
 
 const style = {
@@ -8,21 +9,30 @@ const style = {
     heading: `text-3xl font-bold text-center text-gray-800 p-2`,
     form: `flex justify-between`,
     p: `text-center p-2`,
+    article: `border p-4 ml-2 bg-purple-500 text-slate-100`,
 };
 
-export default function Battle() {
-    const [input, setInput] = useState({})
+const baseURL = "http://localhost:1010/hamsters/random";
 
-    // const getHamsters = async (e) => {
-    //     const url = await fetch("http://localhost:1010/hamsters");
-    //     useEffect(() => {
-    //         fetch(url)
-    //             .then(res => res.json())
-    //             .then(data => setInput(data))
-    //     }, [])
+export default function App() {
+    const [hamstersInfo, setHamstersInfo] = React.useState(null);
+    const [chooseCutest, setChooseCutest] = useState({})
 
-    // }
+    React.useEffect(() => {
+        axios.get(baseURL).then((response) => {
+            setHamstersInfo(response.data);
+        });
+    }, []);
 
+    if (!hamstersInfo) return null;
+
+    function chooseWinner() {
+
+    }
+
+    const refreshPage = () => {
+        window.location.reload();
+    }
 
     return (
         <div className={style.bg}>
@@ -31,13 +41,17 @@ export default function Battle() {
                 <form className={style.form}>
                     <p className={style.p}> Rösta genom att klicka på bilden som du tycker är mest gullig.</p>
                 </form>
-                <form>
-                    {/* {
-                        getHamsters.map((hamsters, id) =>
-                            (<h1>{hamsters.name}</h1>))
-                    } */}
-                </form>
-                {/* <p>Ny bild?<Link to="/Battle">Klicka här.</Link></p> */}
+                <article className={style.article}>
+                    {
+                        hamstersInfo.list.map((hamsters, index) => (
+                            <div>
+                                <img width={250} src={hamsters.imgName[0].downloadURL} alt="random-hamster" />
+                                <h1 key={index}>{hamsters.name}</h1>
+                            </div>
+                        ))};
+                </article>
+
+                <p onClick={refreshPage}>Klicka här för ny battle!</p>
             </div>
         </div >
     )

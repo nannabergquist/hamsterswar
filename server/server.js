@@ -9,6 +9,7 @@ const {
     query
 } = require('express');
 
+
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)
 });
