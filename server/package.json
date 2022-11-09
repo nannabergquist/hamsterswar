@@ -6,7 +6,7 @@
     "firebase-admin": "^11.2.0"
   },
   "scripts": {
-    "start": "node server.js"
+    "start": "nodemon server.js"
   },
   "name": "server",
   "version": "1.0.0",

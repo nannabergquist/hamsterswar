@@ -1,9 +1,10 @@
 import AllHamsters from '../Components/AllHamsters';
-import Hamsters from '../Components/Hamsters';
 import React from 'react';
-import { db } from '../firebase';
+import { db, storage } from '../firebase';
 import { useState, useEffect } from 'react';
-import { query, onSnapshot, collection, addDoc, deleteDoc } from 'firebase/firestore';
+import { query, onSnapshot, collection, addDoc, doc, deleteDoc } from 'firebase/firestore';
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { ImImage } from 'react-icons/im';
 
 const style = {
     bg: `h-screen w-screen p-24 bg-gradient-to-r from-[#2F80ED] to-[#1CB5e0] text-center`,
@@ -12,31 +13,29 @@ const style = {
     form: `bg-white rounded px-8 pt-6 pb-8 mb-4`,
     p: `text-center p-2`,
     article: `grid grid-cols-3 gap-3`,
-    input: `shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline`
-};
+    input: `shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline`,
+    button: `border p-4 ml-2 bg-purple-500 text-slate-100`,
+}
 
 const Gallery = () => {
     const [firebaseConnect, setFirebaseConnect] = useState([]);
-    const [input, setInput] = useState('');
+    const [file, setFile] = useState("");
+    const [data, setData] = useState({});
+    const [newName, setNewName] = useState('');
+    const [newAge, setNewAge] = useState('');
+    const [newFavfood, setNewFavfood] = useState('');
+    const [newLoves, setNewLoves] = useState('');
 
     // lägg till en ny hamster
     const createHamster = async (e) => {
         e.preventDefault(e)
-        if (input === '') {
-            alert('Snälla skriv en valid hamster')
-            return
-        }
         await addDoc(collection(db, 'hamsters'), {
-            name: input,
-            age: input,
-            favFood: input,
-            id: input,
-            imgName: input,
-            loves: input,
+            name: newName,
+            age: newAge,
+            favFood: newFavfood,
+            loves: newLoves,
         })
-        //en tom sträng pga när du har skrivit klart så ska texten försvinna - ej stanna kvar.
-        setInput('')
-    }
+    };
 
     //läsa av hamsters från firebase 
     useEffect(() => {
@@ -52,26 +51,53 @@ const Gallery = () => {
         return () => unsubscribe
     }, []);
 
+    useEffect(() => {
+        const uploadFile = () => {
+            const name = new Date().getTime() + file.name
+            const storageRef = ref(storage, file.name);
+
+            const uploadTask = uploadBytesResumable(storageRef, file);
+            uploadTask.on('state_changed',
+                (snapshot) => {
+                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                    console.log('Upload is ' + progress + '% done');
+                    switch (snapshot.state) {
+                        case 'paused':
+                            console.log('Upload is paused');
+                            break;
+                        case 'running':
+                            console.log('Upload is running');
+                            break;
+                        default:
+                            break;
+                    }
+                },
+                (error) => {
+                    console.log(error);
+                },
+                () => {
+                    getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+                        setData(downloadURL);
+                    });
+                }
+            );
+        }
+    }, [file])
+
     console.log(firebaseConnect);
 
     return (
         <div>
-            <AllHamsters />
-            <form onSubmit={createHamster} className={style.form} action="">
+            <form onSubmit={createHamster} className={style.form}>
                 <h2>Lägg till en ny Hamster</h2>
-                <input value={input} onChange={(e) => setInput(e.target.value)} className={style.input} type="text" placeholder="Namn" />
-                {/* <input value={input} onChange={(e) => setInput(e.target.value)} className={style.input} type="text" placeholder="Ålder" />
-                <input value={input} onChange={(e) => setInput(e.target.value)} className={style.input} type="text" placeholder="Gillar" />
-                <input value={input} onChange={(e) => setInput(e.target.value)} className={style.input} type="text" placeholder="Favorit mat" /> */}
-                {/* <input value={input} onChange={(e) => setInputImg(e.target.value)} className={style.input} type="" placeholder="Bild" /> */}
-                <input type="submit" value="Log in" />
+                <input placeholder="Namn" onChange={(e) => setNewName(e.target.value)} className={style.input} />
+                <input placeholder="Ålder" onChange={(e) => setNewAge(e.target.value)} className={style.input} />
+                <input placeholder="Favorit mat" onChange={(e) => setNewFavfood(e.target.value)} className={style.input} />
+                <input placeholder="Älskar" onChange={(e) => setNewLoves(e.target.value)} className={style.input} />
+                <input type="file" id="file" onChange={(e) => setFile(e.target.files[0])} />
+                <button type="submit" className={style.button} >Skicka</button>
             </form>
-            <ul>
-                {firebaseConnect.map((hamsters, index) => (
-                    <Hamsters key={index}
-                        hamsters={hamsters} />
-                ))}
-            </ul>
+            <AllHamsters />
         </div>
     )
 }

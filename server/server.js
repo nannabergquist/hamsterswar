@@ -46,7 +46,6 @@ app.get('/hamsters', async (req, res) => {
         res.json({
             list: listItem
         })
-        console.log(hamsters);
     } catch (err) {
         console.error(err);
     }

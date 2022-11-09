@@ -1,7 +1,6 @@
 import React from 'react'
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Link } from 'react-router-dom';
 
 const style = {
     bg: `h-screen w-screen p-24 bg-gradient-to-r from-[#2F80ED] to-[#1CB5e0] text-center`,
@@ -16,7 +15,7 @@ const baseURL = "http://localhost:1010/hamsters/random";
 
 export default function App() {
     const [hamstersInfo, setHamstersInfo] = React.useState(null);
-    const [chooseCutest, setChooseCutest] = useState({})
+    const [chooseCutest, setChooseCutest] = useState()
 
     React.useEffect(() => {
         axios.get(baseURL).then((response) => {
@@ -26,13 +25,39 @@ export default function App() {
 
     if (!hamstersInfo) return null;
 
-    function chooseWinner() {
-
-    }
+    console.log(hamstersInfo);
 
     const refreshPage = () => {
         window.location.reload();
     }
+
+    function winner(winnerHamster) {
+        //check winner hamster
+        setChooseCutest(winnerHamster);
+        winnerHamster.wins = winnerHamster.wins + 1;
+        //uppdatera hamstern i db
+
+        //check loser hamster
+        let loser = hamstersInfo.list.filter((hamster) => hamster._id !== winnerHamster._id);
+        loser.losses = loser.losses + 1;
+        //uppdatera hamstern i db
+    }
+
+    // const updateWinner = async (e) => {
+    //     e.preventDefault()
+    //     if (input === '') {
+    //         alert('Please enter a valid message')
+    //         return
+    //     }
+    //     const { uid, displayName } = auth.currentUser
+    //     await addDoc(collection(db, 'messages'), {
+    //         text: input,
+    //         name: displayName,
+    //         uid,
+    //         timestamp: serverTimestamp()
+    //     })
+    //     setInput('')
+    // }
 
     return (
         <div className={style.bg}>
@@ -43,13 +68,17 @@ export default function App() {
                 </form>
                 <article className={style.article}>
                     {
-                        hamstersInfo.list.map((hamsters, index) => (
-                            <div>
-                                <img width={250} src={hamsters.imgName[0].downloadURL} alt="random-hamster" />
-                                <h1 key={index}>{hamsters.name}</h1>
+                        hamstersInfo.list.map((hamster, index) => (
+                            <div onClick={() => winner(hamster)}>
+                                <img width={250} src={hamster.imgName[0].downloadURL} alt="random-hamster" />
+                                <h1 key={index}>{hamster.name}</h1>
                             </div>
                         ))};
                 </article>
+
+                <div>
+                    <h2>{chooseCutest ? chooseCutest.name : null}</h2>
+                </div>
 
                 <p onClick={refreshPage}>Klicka här för ny battle!</p>
             </div>
