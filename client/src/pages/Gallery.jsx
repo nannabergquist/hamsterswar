@@ -24,6 +24,7 @@ const Gallery = () => {
     const [hamsters, setHamsters] = useState([]);
     const [file, setFile] = useState("");
     const [data, setData] = useState({});
+
     const [newName, setNewName] = useState('');
     const [newAge, setNewAge] = useState('');
     const [newFavfood, setNewFavfood] = useState('');

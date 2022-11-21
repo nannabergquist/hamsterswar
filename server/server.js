@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const admin = require('firebase-admin');
-const serviceAccount = require('/etc/secrets/serviceAccount.json');
+const serviceAccount = require('./serviceAccount.json');
 const {
     async
 } = require('@firebase/util');
