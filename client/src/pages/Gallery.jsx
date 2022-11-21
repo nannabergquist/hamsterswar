@@ -4,21 +4,24 @@ import { db, storage } from '../firebase';
 import { useState, useEffect } from 'react';
 import { query, onSnapshot, collection, addDoc, doc, deleteDoc } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { ImImage } from 'react-icons/im';
+import { BsFillArrowLeftSquareFill } from 'react-icons/bs';
+import { Link } from 'react-router-dom';
 
 const style = {
     bg: `h-screen w-screen p-24 bg-gradient-to-r from-[#2F80ED] to-[#1CB5e0] text-center`,
+    hamsterBg: ` p-24 bg-gradient-to-r from-[#2F80ED] to-[#1CB5e0] text-center`,
     container: `bg-slate-100 max-w-[600px] w-full m-auto rounded-md shadow-xl p-4`,
     heading: `text-3xl font-bold text-center text-gray-800 p-2`,
     form: `bg-white rounded px-8 pt-6 pb-8 mb-4`,
     p: `text-center p-2`,
-    article: `grid grid-cols-3 gap-3`,
+    grid: `grid grid-cols-3 gap-3`,
     input: `shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline`,
     button: `border p-4 ml-2 bg-purple-500 text-slate-100`,
+    arrowBack: `border p-4 ml-2 bg-purple-500 rounded text-slate-100 flex justify-between`
 }
 
 const Gallery = () => {
-    const [firebaseConnect, setFirebaseConnect] = useState([]);
+    const [hamsters, setHamsters] = useState([]);
     const [file, setFile] = useState("");
     const [data, setData] = useState({});
     const [newName, setNewName] = useState('');
@@ -35,6 +38,7 @@ const Gallery = () => {
             favFood: newFavfood,
             loves: newLoves,
         })
+        uploadFile()
     };
 
     //läsa av hamsters från firebase 
@@ -46,48 +50,54 @@ const Gallery = () => {
             querySnapshot.forEach((doc) => {
                 hamstersArr.push({ ...doc.data(), id: doc.id })
             });
-            setFirebaseConnect(hamstersArr)
+            setHamsters(hamstersArr)
         })
         return () => unsubscribe
     }, []);
 
-    useEffect(() => {
-        const uploadFile = () => {
-            const name = new Date().getTime() + file.name
-            const storageRef = ref(storage, file.name);
 
-            const uploadTask = uploadBytesResumable(storageRef, file);
-            uploadTask.on('state_changed',
-                (snapshot) => {
-                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                    console.log('Upload is ' + progress + '% done');
-                    switch (snapshot.state) {
-                        case 'paused':
-                            console.log('Upload is paused');
-                            break;
-                        case 'running':
-                            console.log('Upload is running');
-                            break;
-                        default:
-                            break;
-                    }
-                },
-                (error) => {
-                    console.log(error);
-                },
-                () => {
-                    getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-                        setData(downloadURL);
-                    });
+    const uploadFile = () => {
+        const name = new Date().getTime() + file.name
+        const storageRef = ref(storage, file.name);
+
+        const uploadTask = uploadBytesResumable(storageRef, file);
+        uploadTask.on('state_changed',
+            (snapshot) => {
+                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                console.log('Upload is ' + progress + '% done');
+                switch (snapshot.state) {
+                    case 'paused':
+                        console.log('Upload is paused');
+                        break;
+                    case 'running':
+                        console.log('Upload is running');
+                        break;
+                    default:
+                        break;
                 }
-            );
-        }
-    }, [file])
+            },
+            (error) => {
+                console.log(error);
+            },
+            () => {
+                getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+                    setData(downloadURL);
+                });
+            }, [file]
+        )
+    }
 
-    console.log(firebaseConnect);
+
+    console.log(hamsters);
+
+    //delete Hamster
+    const deleteHamsters = async (id) => {
+        await deleteDoc(doc(db, 'hamsters', id))
+    };
 
     return (
         <div>
+            <Link to="/"><button className={style.arrowBack}>{<BsFillArrowLeftSquareFill />}</button></Link>
             <form onSubmit={createHamster} className={style.form}>
                 <h2>Lägg till en ny Hamster</h2>
                 <input placeholder="Namn" onChange={(e) => setNewName(e.target.value)} className={style.input} />
@@ -97,7 +107,17 @@ const Gallery = () => {
                 <input type="file" id="file" onChange={(e) => setFile(e.target.files[0])} />
                 <button type="submit" className={style.button} >Skicka</button>
             </form>
-            <AllHamsters />
+            <div className={style.hamsterBg}>
+                <ul className={style.grid}>
+                    {hamsters.length !== 0 && hamsters.map((hamster, index) => (
+                        <AllHamsters
+                            key={index}
+                            hamster={hamster}
+                            deleteHamsters={deleteHamsters}
+                        />
+                    ))}
+                </ul>
+            </div>
         </div>
     )
 }

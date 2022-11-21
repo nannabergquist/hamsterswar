@@ -1,6 +1,10 @@
 import React from 'react'
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { db } from '../firebase';
+import { query, collection, onSnapshot, updateDoc, doc } from 'firebase/firestore';
+import { BsFillArrowLeftSquareFill } from 'react-icons/bs';
+import { Link } from 'react-router-dom';
 
 const style = {
     bg: `h-screen w-screen p-24 bg-gradient-to-r from-[#2F80ED] to-[#1CB5e0] text-center`,
@@ -9,75 +13,91 @@ const style = {
     form: `flex justify-between`,
     p: `text-center p-2`,
     article: `border p-4 ml-2 bg-purple-500 text-slate-100`,
+    arrowBack: `border p-4 ml-2 bg-purple-500 rounded text-slate-100 flex justify-between`,
+    infoBox: `border p-4 ml-2 bg-purple-500 text-slate-100`
 };
 
-const baseURL = "http://localhost:1010/hamsters/random";
+const baseURL = process.env.REACT_APP_GETRANDOM;
 
-export default function App() {
-    const [hamstersInfo, setHamstersInfo] = React.useState(null);
-    const [chooseCutest, setChooseCutest] = useState()
+const Battle = () => {
+    const [battleHamsters, setBattleHamsters] = useState(null);
+    const [chooseCutest, setChooseCutest] = useState(null);
+    const [allHamsters, setAllHamsters] = useState([]);
 
     React.useEffect(() => {
         axios.get(baseURL).then((response) => {
-            setHamstersInfo(response.data);
+            setBattleHamsters(response.data);
         });
     }, []);
 
-    if (!hamstersInfo) return null;
+    //läsa av hamsters från firebase 
+    useEffect(() => {
+        console.log("vald hamster", chooseCutest);
+        const q = query(collection(db, 'hamsters'))
+        //tar en bild (snapshot) på vår firebase så att vi kan rendera ut på vår skärm.
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
+            let hamstersArr = []
+            querySnapshot.forEach((doc) => {
+                hamstersArr.push({ ...doc.data(), id: doc.id })
+            });
+            setAllHamsters(hamstersArr)
+        })
+        return () => unsubscribe
+    }, []);
 
-    console.log(hamstersInfo);
+    if (!battleHamsters) return null;
+
+    // console.log(allHamsters);
 
     const refreshPage = () => {
         window.location.reload();
     }
 
-    function winner(winnerHamster) {
-        //check winner hamster
+    const winner = async (winnerHamster) => {
+        console.log("vald hamster:", winnerHamster);
         setChooseCutest(winnerHamster);
-        winnerHamster.wins = winnerHamster.wins + 1;
-        //uppdatera hamstern i db
 
-        //check loser hamster
-        let loser = hamstersInfo.list.filter((hamster) => hamster._id !== winnerHamster._id);
-        loser.losses = loser.losses + 1;
-        //uppdatera hamstern i db
+        const firebaseHamster = allHamsters.find(hamster => hamster.name === winnerHamster.name);
+        console.log(firebaseHamster)
+
+        const response = await updateDoc(doc(db, 'hamsters', firebaseHamster.id), {
+            wins: firebaseHamster.wins++,
+            games: firebaseHamster.games++
+        })
+
+        const loser = battleHamsters.list.filter((hamster) => hamster.id !== winnerHamster.id);
+        const firebaseLoser = allHamsters.find(hamster => hamster.name === loser[0].name);
+        console.log('Response: ', response)
+
+        await updateDoc(doc(db, 'hamsters', firebaseLoser.id), {
+            defeats: firebaseLoser.defeats++,
+            games: firebaseLoser.games++
+        })
+
     }
-
-    // const updateWinner = async (e) => {
-    //     e.preventDefault()
-    //     if (input === '') {
-    //         alert('Please enter a valid message')
-    //         return
-    //     }
-    //     const { uid, displayName } = auth.currentUser
-    //     await addDoc(collection(db, 'messages'), {
-    //         text: input,
-    //         name: displayName,
-    //         uid,
-    //         timestamp: serverTimestamp()
-    //     })
-    //     setInput('')
-    // }
 
     return (
         <div className={style.bg}>
             <div className={style.container}>
+                <Link to="/"><button className={style.arrowBack}>{<BsFillArrowLeftSquareFill />}</button></Link>
                 <h2 className={style.heading}>Tävla</h2>
                 <form className={style.form}>
                     <p className={style.p}> Rösta genom att klicka på bilden som du tycker är mest gullig.</p>
                 </form>
                 <article className={style.article}>
                     {
-                        hamstersInfo.list.map((hamster, index) => (
-                            <div onClick={() => winner(hamster)}>
+                        battleHamsters.list.map((hamster, index) => (
+                            <div onClick={() => winner(hamster)} key={hamster.id}>
                                 <img width={250} src={hamster.imgName[0].downloadURL} alt="random-hamster" />
                                 <h1 key={index}>{hamster.name}</h1>
                             </div>
-                        ))};
+                        ))}
                 </article>
 
-                <div>
-                    <h2>{chooseCutest ? chooseCutest.name : null}</h2>
+                <div className={style.infoBox}>
+                    {
+                        chooseCutest ? "Du valde " + chooseCutest.name + " som mest gullig." : null
+                    }
                 </div>
 
                 <p onClick={refreshPage}>Klicka här för ny battle!</p>
@@ -85,3 +105,4 @@ export default function App() {
         </div >
     )
 }
+export default Battle;
