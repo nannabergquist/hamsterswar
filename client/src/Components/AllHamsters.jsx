@@ -17,8 +17,9 @@ const AllHamsters = ({ deleteHamsters, hamster, index }) => {
 
             <div className={style.text}>
                 <h1 key={index}>{hamster.name}</h1>
-                <p>{hamster.age}</p>
-                <p>{hamster.favFood}</p>
+                <p>Ålder: {hamster.age}</p>
+                <p>Favoritmat: {hamster.favFood}</p>
+                <p>Älskar: {hamster.loves}</p>
                 <button onClick={() => deleteHamsters(hamster.id)}>{<FaRegTrashAlt />}</button>
             </div>
         </div>
