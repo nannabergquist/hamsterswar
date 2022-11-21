@@ -145,6 +145,6 @@ app.delete('/hamsters/:id', async (req, res) => {
 })
 
 
-app.listen(1010, () => {
+app.listen(2222, () => {
     console.log('servern är igång!');
 })
