@@ -12,6 +12,7 @@ const style = {
 };
 
 export default function Landingpage() {
+
     return (
         <div className={style.bg}>
             <div className={style.container}>

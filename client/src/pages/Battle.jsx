@@ -24,7 +24,7 @@ const Battle = () => {
     const [chooseCutest, setChooseCutest] = useState(null);
     const [allHamsters, setAllHamsters] = useState([]);
 
-    React.useEffect(() => {
+    useEffect(() => {
         axios.get(baseURL).then((response) => {
             setBattleHamsters(response.data);
         });
